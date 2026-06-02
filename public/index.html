@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d0f12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Senlo Leads">
+<link rel="manifest" href="/manifest.webmanifest">
+<title>Senlo™ Leads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f12;
+    --surface: #141720;
+    --surface2: #1a1e2a;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #eef0f5;
+    --muted: #8a8fa0;
+    --hint: #3a3f52;
+    --accent: #7eb8f7;
+    --accent-dim: rgba(126,184,247,0.08);
+    --accent-mid: rgba(126,184,247,0.15);
+    --green: #4fd1a0;
+    --green-dim: rgba(79,209,160,0.12);
+    --red: #f0786f;
+    --red-dim: rgba(240,120,111,0.10);
+    --amber: #e8b964;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Outfit', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.4;
+  }
+  .grid-bg {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(126,184,247,0.012) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(126,184,247,0.012) 1px, transparent 1px);
+    background-size: 80px 80px;
+  }
+
+  @keyframes fadeUp { from { opacity:0; transform: translateY(16px);} to {opacity:1; transform:translateY(0);} }
+  @keyframes fadeIn { from { opacity:0;} to {opacity:1;} }
+  @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.8);} }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pop { 0%{transform:scale(0.6);opacity:0;} 60%{transform:scale(1.08);} 100%{transform:scale(1);opacity:1;} }
+
+  .app { position: relative; z-index: 1; max-width: 460px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 0.5px solid var(--border);
+    position: sticky; top: 0;
+    background: rgba(13,15,18,0.9);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    z-index: 50;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .brand-mark {
+    width: 30px; height: 30px; border: 1.5px solid var(--accent);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .brand-mark svg { width: 15px; height: 15px; }
+  .brand-text { font-family: var(--serif); font-size: 18px; letter-spacing: -0.01em; }
+  .brand-text sup { font-family: var(--mono); font-size: 8px; color: var(--accent); vertical-align: super; }
+  .topbar-tenant {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); border: 0.5px solid var(--accent); padding: 5px 11px; border-radius: 2px;
+    display: none; align-items: center; gap: 7px;
+  }
+  .topbar-tenant.show { display: inline-flex; animation: fadeIn 0.4s ease; }
+  .topbar-tenant .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulse-dot 2s infinite; }
+
+  .screen { flex: 1; padding: 32px 22px 40px; display: none; flex-direction: column; }
+  .screen.active { display: flex; animation: fadeUp 0.5s ease; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 14px; display: flex; align-items: center; gap: 9px;
+  }
+  .eyebrow .line { flex: 1; height: 0.5px; background: var(--border2); }
+  h1.title { font-family: var(--serif); font-size: 30px; line-height: 1.1; letter-spacing: -0.01em; margin-bottom: 12px; font-weight: 400; }
+  h1.title em { font-style: italic; color: var(--accent); }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 30px; max-width: 38ch; }
+
+  /* ── PIN screen ── */
+  .pin-wrap { margin-top: 8px; }
+  .pin-display {
+    display: flex; gap: 12px; justify-content: center; margin: 8px 0 28px;
+  }
+  .pin-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 1.5px solid var(--border2); transition: all 0.2s;
+  }
+  .pin-dot.filled { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px var(--accent-mid); }
+  .pin-dot.error { border-color: var(--red); background: var(--red); animation: shake 0.4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+
+  .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 280px; margin: 0 auto; }
+  .key {
+    aspect-ratio: 1.4; border: 0.5px solid var(--border2); background: var(--surface);
+    color: var(--text); font-family: var(--mono); font-size: 22px; border-radius: 4px;
+    cursor: pointer; transition: all 0.12s; display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent; user-select: none;
+  }
+  .key:active { background: var(--accent-dim); border-color: var(--accent); transform: scale(0.96); }
+  .key.fn { font-size: 12px; font-family: var(--mono); letter-spacing: 0.08em; color: var(--muted); }
+  .pin-error-msg { text-align: center; color: var(--red); font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; margin-top: 20px; min-height: 16px; }
+
+  /* ── Capture screen ── */
+  .capture-zone {
+    border: 1px dashed var(--border2); border-radius: 8px; background: var(--surface);
+    padding: 40px 24px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .capture-zone:active { border-color: var(--accent); background: var(--accent-dim); }
+  .capture-zone.has-image { padding: 0; border-style: solid; }
+  .capture-icon { width: 46px; height: 46px; margin: 0 auto 16px; color: var(--accent); }
+  .capture-icon svg { width: 100%; height: 100%; }
+  .capture-label { font-family: var(--mono); font-size: 13px; letter-spacing: 0.05em; color: var(--text); margin-bottom: 6px; }
+  .capture-hint { font-size: 12px; color: var(--muted); }
+  .preview-img { width: 100%; display: block; max-height: 320px; object-fit: contain; background: #000; }
+  .preview-overlay {
+    position: absolute; bottom: 0; left: 0; right: 0; padding: 12px 16px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.85)); display: flex; justify-content: space-between; align-items: center;
+  }
+  .preview-overlay span { font-family: var(--mono); font-size: 11px; color: var(--text); }
+  .preview-retake { font-family: var(--mono); font-size: 11px; color: var(--accent); background: none; border: 0.5px solid var(--accent); padding: 5px 12px; border-radius: 3px; cursor: pointer; }
+  #fileInput { display: none; }
+
+  /* ── Buttons ── */
+  .btn {
+    width: 100%; padding: 16px; border-radius: 4px; font-family: var(--mono);
+    font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    border: none; transition: all 0.18s; -webkit-tap-highlight-color: transparent;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-primary { background: var(--accent); color: #0d0f12; font-weight: 500; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { background: var(--surface2); color: var(--hint); cursor: not-allowed; transform: none; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 0.5px solid var(--border2); margin-top: 12px; }
+  .btn-ghost:active { color: var(--text); border-color: var(--text); }
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(13,15,18,0.3); border-top-color: #0d0f12; border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+  .actions { margin-top: 24px; }
+
+  /* ── Review screen ── */
+  .field { background: var(--surface); border: 0.5px solid var(--border); border-radius: 6px; padding: 14px 16px; margin-bottom: 12px; transition: border-color 0.2s; position: relative; }
+  .field.ok { border-left: 2px solid var(--green); }
+  .field.bad { border-left: 2px solid var(--red); background: var(--red-dim); }
+  .field-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .field-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .field-tag { font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; color: var(--hint); border: 0.5px solid var(--border2); padding: 2px 6px; border-radius: 2px; text-transform: uppercase; }
+  .field-status { width: 18px; height: 18px; flex-shrink: 0; }
+  .field-status.ok { color: var(--green); }
+  .field-status.bad { color: var(--red); }
+  .field-input {
+    width: 100%; background: transparent; border: none; color: var(--text);
+    font-family: var(--sans); font-size: 16px; font-weight: 400; padding: 2px 0; outline: none;
+  }
+  .field-input::placeholder { color: var(--hint); }
+  .field-input:focus { border-bottom: 1px solid var(--accent); }
+  .field-read { font-family: var(--mono); font-size: 10px; color: var(--hint); margin-top: 6px; letter-spacing: 0.02em; }
+  .field-read b { color: var(--muted); }
+
+  .verdict { display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 6px; margin: 4px 0 20px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.05em; }
+  .verdict.go { background: var(--green-dim); color: var(--green); }
+  .verdict.no { background: var(--red-dim); color: var(--red); }
+  .verdict .vicon { width: 20px; height: 20px; flex-shrink: 0; }
+
+  .flags-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 24px; }
+  .flag { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 9px; border-radius: 2px; border: 0.5px solid var(--border2); color: var(--muted); }
+  .flag.on { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+  /* ── Sent screen ── */
+  .sent-wrap { text-align: center; padding-top: 30px; }
+  .sent-check { width: 72px; height: 72px; margin: 0 auto 24px; color: var(--green); animation: pop 0.5s ease; }
+  .payload-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: 6px; padding: 16px; margin: 24px 0; text-align: left; }
+  .payload-box pre { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: pre-wrap; word-break: break-word; line-height: 1.7; }
+  .preview-banner { background: var(--accent-dim); border: 0.5px solid var(--accent); border-radius: 4px; padding: 11px 14px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; color: var(--accent); margin-bottom: 20px; text-align: left; line-height: 1.6; }
+
+  .footnote { font-family: var(--mono); font-size: 9px; color: var(--hint); text-align: center; padding: 20px; letter-spacing: 0.05em; }
+
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: var(--surface2); border: 0.5px solid var(--border2); color: var(--text);
+    font-family: var(--mono); font-size: 12px; padding: 13px 20px; border-radius: 4px;
+    transition: transform 0.3s ease; z-index: 200; max-width: 90%;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.err { border-color: var(--red); color: var(--red); }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16 Q8 6 12 12 T20 8" stroke="#7eb8f7" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      <span class="brand-text">Senlo<sup>™</sup></span>
+    </div>
+    <div class="topbar-tenant" id="tenantBadge"><span class="dot"></span><span id="tenantName"></span></div>
+  </div>
+
+  <!-- ── SCREEN 1: PIN ── -->
+  <section class="screen active" id="screenPin">
+    <div class="eyebrow"><span>Access</span><span class="line"></span></div>
+    <h1 class="title">Enter your<br><em>dealership code.</em></h1>
+    <p class="subtitle">Your code routes leads to the right pipeline. Ask your manager if you don't have one.</p>
+    <div class="pin-wrap">
+      <div class="pin-display" id="pinDisplay">
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="keypad" id="keypad">
+        <div class="key" data-k="1">1</div><div class="key" data-k="2">2</div><div class="key" data-k="3">3</div>
+        <div class="key" data-k="4">4</div><div class="key" data-k="5">5</div><div class="key" data-k="6">6</div>
+        <div class="key" data-k="7">7</div><div class="key" data-k="8">8</div><div class="key" data-k="9">9</div>
+        <div class="key fn" data-k="clear">CLR</div><div class="key" data-k="0">0</div><div class="key fn" data-k="del">DEL</div>
+      </div>
+      <div class="pin-error-msg" id="pinError"></div>
+    </div>
+  </section>
+
+  <!-- ── SCREEN 2: CAPTURE ── -->
+  <section class="screen" id="screenCapture">
+    <div class="eyebrow"><span>New lead</span><span class="line"></span></div>
+    <h1 class="title">Screenshot the<br><em>AutoGate lead.</em></h1>
+    <p class="subtitle">Open the customer detail page in AutoGate, screenshot it, then upload it here.</p>
+
+    <div class="capture-zone" id="captureZone">
+      <div class="capture-icon" id="captureIcon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 7h3l1.5-2h9L18 7h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <div class="capture-label" id="captureLabel">Tap to upload screenshot</div>
+      <div class="capture-hint" id="captureHint">PNG or JPG · from your photos or camera</div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+
+    <div class="actions">
+      <button class="btn btn-primary" id="extractBtn" disabled>Extract details</button>
+      <button class="btn btn-ghost" id="logoutBtn">Switch dealership</button>
+    </div>
+  </section>
+
+  <!-- ── SCREEN 3: REVIEW ── -->
+  <section class="screen" id="screenReview">
+    <div class="eyebrow"><span>Confirm</span><span class="line"></span></div>
+    <h1 class="title">Check the<br><em>details.</em></h1>
+    <p class="subtitle">Tap any field to fix it. A valid mobile or email is needed to send.</p>
+
+    <div class="verdict" id="verdict"></div>
+    <div id="fieldsContainer"></div>
+    <div class="flags-row" id="flagsRow"></div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="sendBtn">Send to pipeline</button>
+      <button class="btn btn-ghost" id="backBtn">Back · new screenshot</button>
+    </div>
+  </section>
+
+  <!-- ── SCREEN 4: SENT ── -->
+  <section class="screen" id="screenSent">
+    <div class="sent-wrap">
+      <div class="sent-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1 class="title" style="font-size:26px;">Lead <em>captured.</em></h1>
+      <p class="subtitle" style="margin:0 auto 24px;">The automation takes it from here. You'll get an update when it books, needs a call, or hits a dead end.</p>
+
+      <div class="preview-banner" id="previewBanner">
+        PREVIEW MODE · GHL not connected yet. This is the exact payload that will flow to the pipeline once it's wired in.
+      </div>
+      <div class="payload-box"><pre id="payloadPre"></pre></div>
+
+      <button class="btn btn-primary" id="nextLeadBtn">Next lead</button>
+    </div>
+  </section>
+
+  <div class="footnote">SENLO™ LEAD ENGINE · PROOF OF CONCEPT</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ── State ──
+  let token = null;
+  let pin = "";
+  let imageData = null;     // base64 (no prefix)
+  let imageMediaType = null;
+  let lastFields = null;    // model output
+  let lastValidation = null;
+
+  const $ = (id) => document.getElementById(id);
+  const screens = { pin: $("screenPin"), capture: $("screenCapture"), review: $("screenReview"), sent: $("screenSent") };
+
+  function show(name) {
+    Object.values(screens).forEach((s) => s.classList.remove("active"));
+    screens[name].classList.add("active");
+    window.scrollTo(0, 0);
+  }
+
+  function toast(msg, isErr) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.className = "toast show" + (isErr ? " err" : "");
+    setTimeout(() => (t.className = "toast" + (isErr ? " err" : "")), 3200);
+  }
+
+  // ── PIN entry ──
+  function renderPin() {
+    const dots = $("pinDisplay").children;
+    for (let i = 0; i < 4; i++) dots[i].className = "pin-dot" + (i < pin.length ? " filled" : "");
+  }
+
+  $("keypad").addEventListener("click", (e) => {
+    const k = e.target.closest(".key");
+    if (!k) return;
+    const key = k.dataset.k;
+    $("pinError").textContent = "";
+    if (key === "del") pin = pin.slice(0, -1);
+    else if (key === "clear") pin = "";
+    else if (pin.length < 4) pin += key;
+    renderPin();
+    if (pin.length === 4) submitPin();
+  });
+
+  async function submitPin() {
+    try {
+      const r = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: pin }),
+      });
+      const data = await r.json();
+      if (!data.ok) {
+        const dots = $("pinDisplay").children;
+        for (let i = 0; i < 4; i++) dots[i].classList.add("error");
+        $("pinError").textContent = "Invalid code — try again";
+        setTimeout(() => { pin = ""; renderPin(); }, 500);
+        return;
+      }
+      token = data.token;
+      $("tenantName").textContent = data.tenant.name;
+      $("tenantBadge").classList.add("show");
+      if (data.tenant.accent) document.documentElement.style.setProperty("--accent", data.tenant.accent);
+      pin = "";
+      renderPin();
+      show("capture");
+    } catch (err) {
+      $("pinError").textContent = "Connection error";
+    }
+  }
+
+  // ── Image capture + compression ──
+  $("captureZone").addEventListener("click", () => $("fileInput").click());
+
+  $("fileInput").addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      const { dataUrl, base64, mediaType } = await compressImage(file);
+      imageData = base64;
+      imageMediaType = mediaType;
+      const zone = $("captureZone");
+      zone.classList.add("has-image");
+      zone.innerHTML =
+        '<img src="' + dataUrl + '" class="preview-img" alt="lead">' +
+        '<div class="preview-overlay"><span>Screenshot ready</span>' +
+        '<button class="preview-retake" id="retakeBtn">Replace</button></div>';
+      $("retakeBtn").addEventListener("click", (ev) => { ev.stopPropagation(); resetCapture(); $("fileInput").click(); });
+      $("extractBtn").disabled = false;
+    } catch (err) {
+      toast("Couldn't read that image", true);
+    }
+  });
+
+  function resetCapture() {
+    imageData = null; imageMediaType = null;
+    const zone = $("captureZone");
+    zone.classList.remove("has-image");
+    zone.innerHTML =
+      '<div class="capture-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 7h3l1.5-2h9L18 7h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg></div>' +
+      '<div class="capture-label">Tap to upload screenshot</div>' +
+      '<div class="capture-hint">PNG or JPG · from your photos or camera</div>';
+    $("extractBtn").disabled = true;
+  }
+
+  // Downscale + JPEG-compress client-side to keep uploads small/fast.
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 1400;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+          resolve({ dataUrl, base64: dataUrl.split(",")[1], mediaType: "image/jpeg" });
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ── Extract ──
+  $("extractBtn").addEventListener("click", async () => {
+    if (!imageData) return;
+    const btn = $("extractBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Reading...';
+    try {
+      const r = await fetch("/api/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, image: imageData, mediaType: imageMediaType }),
+      });
+      const data = await r.json();
+      if (!data.ok) {
+        if (r.status === 401) { toast("Session expired — re-enter code", true); show("pin"); }
+        else toast(data.error || "Extraction failed", true);
+        return;
+      }
+      lastFields = data.fields;
+      lastValidation = data.validation;
+      renderReview();
+      show("review");
+    } catch (err) {
+      toast("Connection error", true);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = "Extract details";
+    }
+  });
+
+  // ── Review render ──
+  const FIELD_META = {
+    name:     { label: "Name", tag: "preferred", placeholder: "No name — generic opener" },
+    mobile:   { label: "Mobile", tag: "primary", placeholder: "No mobile" },
+    email:    { label: "Email", tag: "bonus / fallback", placeholder: "No email" },
+    car:      { label: "Vehicle", tag: "core", placeholder: "No vehicle — bot will ask" },
+    postcode: { label: "Postcode", tag: "bonus", placeholder: "—" },
+  };
+  const ORDER = ["name", "mobile", "email", "car", "postcode"];
+
+  function iconOk() { return '<svg class="field-status ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke-linecap="round"/></svg>'; }
+  function iconBad() { return '<svg class="field-status bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16v.5" stroke-linecap="round"/></svg>'; }
+
+  function renderReview() {
+    const c = lastValidation.checks;
+    const container = $("fieldsContainer");
+    container.innerHTML = "";
+
+    ORDER.forEach((key) => {
+      const meta = FIELD_META[key];
+      const chk = c[key];
+      const val = chk.value != null ? chk.value : "";
+      const raw = (lastFields[key] && lastFields[key].read) || null;
+      const ok = chk.ok;
+
+      const div = document.createElement("div");
+      div.className = "field " + (ok ? "ok" : "bad");
+      div.innerHTML =
+        '<div class="field-head">' +
+          '<span class="field-label">' + meta.label + ' <span class="field-tag">' + meta.tag + '</span></span>' +
+          (ok ? iconOk() : iconBad()) +
+        '</div>' +
+        '<input class="field-input" data-key="' + key + '" value="' + escapeHtml(val) + '" placeholder="' + meta.placeholder + '">' +
+        (raw ? '<div class="field-read"><b>read:</b> ' + escapeHtml(raw) + '</div>' : "");
+      container.appendChild(div);
+    });
+
+    // live re-validate on edit
+    container.querySelectorAll(".field-input").forEach((inp) => {
+      inp.addEventListener("input", onFieldEdit);
+    });
+
+    renderVerdictAndFlags();
+  }
+
+  function onFieldEdit(e) {
+    const key = e.target.dataset.key;
+    // mutate lastFields then re-validate via a lightweight client mirror:
+    if (!lastFields[key]) lastFields[key] = {};
+    lastFields[key].value = e.target.value;
+    // Re-validate by asking the server? No — keep it instant client-side using
+    // a mirror of the rules for UX only; the SERVER re-validates on send (trust boundary).
+    lastValidation = clientValidate(lastFields);
+    // update just the affected field's ok state + verdict (cheap full re-render)
+    refreshFieldStates();
+    renderVerdictAndFlags();
+  }
+
+  function refreshFieldStates() {
+    const c = lastValidation.checks;
+    ORDER.forEach((key) => {
+      const inp = document.querySelector('.field-input[data-key="' + key + '"]');
+      if (!inp) return;
+      const field = inp.closest(".field");
+      const ok = c[key].ok;
+      field.className = "field " + (ok ? "ok" : "bad");
+      const head = field.querySelector(".field-head");
+      const oldIcon = head.querySelector(".field-status");
+      if (oldIcon) oldIcon.outerHTML = ok ? iconOk() : iconBad();
+    });
+  }
+
+  function renderVerdictAndFlags() {
+    const v = lastValidation;
+    const verdict = $("verdict");
+    if (v.canSend) {
+      verdict.className = "verdict go";
+      verdict.innerHTML = '<svg class="vicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke-linecap="round"/></svg> Ready to send' + (v.allGreen ? " · all fields clean" : " · contactable");
+    } else {
+      verdict.className = "verdict no";
+      verdict.innerHTML = '<svg class="vicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16v.5" stroke-linecap="round"/></svg> Needs a valid mobile or email';
+    }
+    $("sendBtn").disabled = !v.canSend;
+
+    const f = v.flags;
+    const flags = [
+      { k: "channel", label: f.channel ? f.channel.toUpperCase() : "NO CHANNEL", on: !!f.channel },
+      { k: "name", label: f.hasName ? "HAS NAME" : "GENERIC OPENER", on: f.hasName },
+      { k: "car", label: f.hasCar ? "HAS VEHICLE" : "BOT ASKS VEHICLE", on: f.hasCar },
+      { k: "text", label: "PREFERS TEXT", on: f.prefersText },
+      { k: "comment", label: "HAS COMMENT", on: f.hasComment },
+    ];
+    $("flagsRow").innerHTML = flags.map((x) => '<span class="flag' + (x.on ? " on" : "") + '">' + x.label + "</span>").join("");
+  }
+
+  // Client mirror of server validation (UX only; server is the trust boundary).
+  function clientValidate(fields) {
+    const AU = /^04\d{2}\s?\d{3}\s?\d{3}$/;
+    const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const PC = /^\d{4}$/;
+    function normMobile(raw) {
+      if (!raw) return null;
+      let d = String(raw).replace(/\D/g, "");
+      if (d.startsWith("0061")) d = d.slice(4);
+      else if (d.startsWith("61")) d = d.slice(2);
+      if (d.length === 9 && d.startsWith("4")) d = "0" + d;
+      if (!/^04\d{8}$/.test(d)) return null;
+      return d.replace(/^(\d{4})(\d{3})(\d{3})$/, "$1 $2 $3");
+    }
+    const name = (fields.name && fields.name.value || "").trim();
+    const hasName = name.length >= 2 && !/^name$/i.test(name);
+    const mobile = normMobile(fields.mobile && (fields.mobile.value || fields.mobile.read));
+    const mobileOk = AU.test(mobile || "");
+    const email = ((fields.email && fields.email.value) || "").trim().toLowerCase() || null;
+    const emailValid = email !== null && EMAIL.test(email);
+    const car = ((fields.car && fields.car.value) || "").trim() || null;
+    const hasCar = !!car && car.length >= 3;
+    const postcode = ((fields.postcode && fields.postcode.value) || "").trim() || null;
+    const contactable = mobileOk || emailValid;
+    const comment = fields.comment || null;
+    return {
+      checks: {
+        name: { ok: hasName, value: hasName ? name : null },
+        mobile: { ok: mobileOk, value: mobile },
+        email: { ok: email === null || EMAIL.test(email), value: email },
+        car: { ok: hasCar, value: hasCar ? car : null },
+        postcode: { ok: postcode === null || PC.test(postcode), value: postcode },
+      },
+      flags: {
+        hasName, hasCar,
+        channel: mobileOk ? "sms" : emailValid ? "email" : null,
+        emailOnly: !mobileOk && emailValid,
+        prefersText: /no call|text|message back|don'?t call|sms/i.test(comment || ""),
+        hasComment: !!comment,
+      },
+      comment,
+      canSend: contactable,
+      allGreen: contactable && (email === null || EMAIL.test(email)) && (postcode === null || PC.test(postcode)),
+    };
+  }
+
+  // ── Send (option B: preview payload) ──
+  $("sendBtn").addEventListener("click", async () => {
+    const btn = $("sendBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Sending...';
+    try {
+      const r = await fetch("/api/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, fields: lastFields }),
+      });
+      const data = await r.json();
+      if (!data.ok) {
+        if (r.status === 401) { toast("Session expired — re-enter code", true); show("pin"); }
+        else toast(data.error || "Send failed", true);
+        return;
+      }
+      $("payloadPre").textContent = JSON.stringify(data.payload, null, 2);
+      $("previewBanner").style.display = data.previewMode ? "block" : "none";
+      show("sent");
+    } catch (err) {
+      toast("Connection error", true);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = "Send to pipeline";
+    }
+  });
+
+  // ── Navigation ──
+  $("backBtn").addEventListener("click", () => { resetCapture(); show("capture"); });
+  $("nextLeadBtn").addEventListener("click", () => { resetCapture(); show("capture"); });
+  $("logoutBtn").addEventListener("click", () => {
+    token = null; pin = ""; renderPin(); resetCapture();
+    $("tenantBadge").classList.remove("show");
+    show("pin");
+  });
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+  }
+
+  renderPin();
+})();
+</script>
+</body>
+</html>

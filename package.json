@@ -1,0 +1,10 @@
+{
+  "name": "senlo-lead-pwa",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Senlo dealership lead capture PWA — AutoGate screenshot to GHL pipeline.",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1"
+  }
+}
