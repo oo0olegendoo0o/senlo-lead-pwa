@@ -1,7 +1,6 @@
 // api/send.js
 // POST { token, fields } -> re-validates the rep-confirmed fields server-side,
-// builds the exact payload that WILL go to GHL, and (option B for the pilot)
-// returns it for preview instead of posting. Stage 3 flips the real POST on.
+// builds the exact payload that goes to GHL, and POSTs it to the tenant webhook.
 //
 // Why re-validate here: never trust the client. The rep may have edited fields;
 // we re-run the same deterministic checks so a bad mobile can't slip through.
@@ -59,20 +58,33 @@ export default async function handler(req, res) {
     submittedAt: new Date().toISOString(),
   };
 
-  // ── Stage 3 will enable this real POST to the tenant's GHL webhook ──
-  // if (tenant?.webhook) {
-  //   await fetch(tenant.webhook, {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify(payload),
-  //   });
-  // }
+  // ── Stage 3: real POST to the tenant's GHL webhook ──
+  if (!tenant?.webhook) {
+    res.status(500).json({ ok: false, error: "No webhook configured for this tenant" });
+    return;
+  }
 
-  // Option B for the pilot: return the payload for preview, mark not-yet-sent.
+  let delivered = false;
+  try {
+    const ghlRes = await fetch(tenant.webhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    delivered = ghlRes.ok;
+    if (!ghlRes.ok) {
+      const text = await ghlRes.text();
+      console.error("GHL webhook non-200:", ghlRes.status, text);
+    }
+  } catch (err) {
+    console.error("GHL webhook POST failed:", err);
+    res.status(502).json({ ok: false, error: "Could not reach GHL — try again" });
+    return;
+  }
+
   res.status(200).json({
     ok: true,
-    delivered: false, // becomes true in Stage 3 once GHL is wired
-    previewMode: true,
+    delivered,
     payload,
   });
 }
